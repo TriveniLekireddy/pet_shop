@@ -1,25 +1,56 @@
 pipeline {
-    agent {
-  label 'dev'
-}
-tools {
-  maven 'maven'
-}
+    agent { label 'dev' }   // Jenkins agent with label "dev"
+
+    tools {
+        maven 'Maven'   // Configure Maven under "Global Tool Configuration" in Jenkins
+    }
+
     stages {
-        stage('Git') {
+        stage('Checkout from GitHub') {
             steps {
-                git branch: 'main', url: 'https://github.com/vamsibyramala/pet_shop.git'
+                git branch: 'main',
+                    url: 'https://github.com/YourUsername/YourRepo.git'
             }
         }
-        stage('maven') {
+
+        stage('Build') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn clean package -DskipTests'
             }
         }
-        stage('deploy') {
+
+        stage('Test') {
             steps {
-                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tomcat', path: '', url: 'http://18.216.225.116:8080/')], contextPath: 'myapp', war: '**/*.war'
+                sh 'mvn test'
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                sh '''
+                    echo "Stopping Tomcat..."
+                    /opt/tomcat9/bin/shutdown.sh || true
+
+                    echo "Cleaning old WAR..."
+                    rm -rf /opt/tomcat9/webapps/petshop*
+                    
+                    echo "Deploying new WAR..."
+                    cp target/petshop.war /opt/tomcat9/webapps/
+
+                    echo "Starting Tomcat..."
+                    /opt/tomcat9/bin/startup.sh
+                '''
             }
         }
     }
+
+    post {
+        success {
+            echo "🎉 Deployment Successful!"
+        }
+        failure {
+            echo "❌ Deployment Failed!"
+        }
+    }
 }
+

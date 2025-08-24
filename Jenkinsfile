@@ -1,15 +1,10 @@
 pipeline {
-    agent { label 'dev' }   // Jenkins agent with label "dev"
-
-    tools {
-        maven 'Maven'   // Configure Maven under "Global Tool Configuration" in Jenkins
-    }
+    agent any
 
     stages {
-        stage('Checkout from GitHub') {
+        stage('Git Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/YourUsername/YourRepo.git'
+                git branch: 'main', url: 'https://github.com/TriveniLekireddy/pet_shop.git'
             }
         }
 
@@ -28,29 +23,21 @@ pipeline {
         stage('Deploy to Tomcat') {
             steps {
                 sh '''
-                    echo "Stopping Tomcat..."
-                    /opt/tomcat9/bin/shutdown.sh || true
+                  echo "Deploying WAR file to Tomcat..."
+                  # Stop Tomcat (optional, sometimes needed)
+                  # sudo systemctl stop tomcat
 
-                    echo "Cleaning old WAR..."
-                    rm -rf /opt/tomcat9/webapps/petshop*
-                    
-                    echo "Deploying new WAR..."
-                    cp target/petshop.war /opt/tomcat9/webapps/
+                  # Copy the WAR file to Tomcat webapps
+                  sudo cp target/*.war /opt/tomcat9/webapps/
 
-                    echo "Starting Tomcat..."
-                    /opt/tomcat9/bin/startup.sh
+                  # Start Tomcat again (if stopped)
+                  # sudo systemctl start tomcat
+
+                  echo "Deployment finished!"
                 '''
             }
         }
     }
-
-    post {
-        success {
-            echo "🎉 Deployment Successful!"
-        }
-        failure {
-            echo "❌ Deployment Failed!"
-        }
-    }
 }
+
 
